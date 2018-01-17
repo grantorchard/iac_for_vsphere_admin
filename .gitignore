@@ -1,0 +1,8 @@
+# Terraform files
+.terraform
+terraform.tfvars
+*.tfstate*
+
+# OS X files
+.history
+.DS_Store
