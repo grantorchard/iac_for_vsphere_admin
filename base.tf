@@ -10,14 +10,46 @@ provider "vsphere" {
 }
 
 # ---------------------------------------------------------------------------------------------------------------------
+# DISCOVER RESOURCES
+# A number of resources in our environment are not managed by Terraform, so here we discover them to use as inputs to
+# other resources in this definition.
+# Note that although in this environment these resources are unmanaged, it doesn't mean that they aren't valid resource
+# types. Please look at https://www.terraform.io/docs/providers/vsphere/ to see a full list of vSphere resources.
+# ---------------------------------------------------------------------------------------------------------------------
+
+data "vsphere_datacenter" "regiona01" {
+  name = "RegionA01"
+}
+
+data "vsphere_resource_pool" "regiona01-compute-resources" {
+  name          = "RegionA01-Compute/Resources"
+  datacenter_id = "${data.vsphere_datacenter.regiona01.id}"
+}
+
+data "vsphere_datastore" "regiona01-iscsi-01-comp01" {
+  name          = "RegionA01-ISCSI01-COMP01"
+  datacenter_id = "${data.vsphere_datacenter.regiona01.id}"
+}
+
+data "vsphere_network" "vm-network" {
+  name          = "VM Network"
+  datacenter_id = "${data.vsphere_datacenter.regiona01.id}"
+}
+
+data "vsphere_virtual_machine" "base-linux-cli" {
+  name          = "base-linux-cli"
+  datacenter_id = "${data.vsphere_datacenter.regiona01.id}"
+}
+
+# ---------------------------------------------------------------------------------------------------------------------
 # DEPLOY VIRTUAL MACHINE
 # Cloning from the base-linux-cli template. 
 # ---------------------------------------------------------------------------------------------------------------------
 
 resource "vsphere_virtual_machine" "tf-01a" {
   name             = "tf-01a"
-  resource_pool_id = "resgroup-102"
-  datastore_id     = "datastore-61"
+  resource_pool_id = "${data.vsphere_resource_pool.regiona01-compute-resources.id}"
+  datastore_id     = "${data.vsphere_datastore.regiona01-iscsi-01-comp01.id}"
 
   num_cpus = 2
   memory   = 1024
@@ -25,7 +57,7 @@ resource "vsphere_virtual_machine" "tf-01a" {
   guest_id = "centos64Guest"
 
   network_interface {
-    network_id   = "network-781"
+    network_id   = "${data.vsphere_network.vm-network.id}"
   }
 
   disk {
@@ -34,7 +66,7 @@ resource "vsphere_virtual_machine" "tf-01a" {
   }
 
   clone {
-    template_uuid = "4208c2fc-55c2-5534-2336-2d6625fcef89"
+    template_uuid = "${data.vsphere_virtual_machine.base-linux-cli.id}"
 
     customize {
       linux_options {
