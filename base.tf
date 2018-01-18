@@ -54,7 +54,7 @@ resource "vsphere_virtual_machine" "tf-01a" {
   num_cpus = 2
   memory   = 1024
 
-  guest_id = "centos64Guest"
+  guest_id = "${data.vsphere_virtual_machine.base-linux-cli.guest_id}"
 
   network_interface {
     network_id   = "${data.vsphere_network.vm-network.id}"
