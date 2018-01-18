@@ -26,7 +26,6 @@ resource "vsphere_virtual_machine" "tf-01a" {
 
   network_interface {
     network_id   = "network-781"
-    adapter_type = "vmxnet3"
   }
 
   disk {
